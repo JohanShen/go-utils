@@ -1,24 +1,23 @@
 package queue
 
 import (
-	"../timer"
-	"../utils"
 	"fmt"
 	"sync"
+	"utils/timer"
+	"utils/utils"
 )
 
-type delayQueue struct {
-
-	queue []interface{}
+type DelayQueue struct {
+	queue    []interface{}
 	callback func([]interface{}) error
-	timer *timer.Timer
-	locker *sync.Mutex
+	timer    *timer.Timer
+	locker   *sync.Mutex
 }
 
-
-func  NewDelayQueue(interval int64, callback func([]interface{}) error) *delayQueue{
-	dq := &delayQueue{	}
-	dq.queue = make([]interface{}, 50, 100)
+func NewDelayQueue(interval int64, callback func([]interface{}) error) *DelayQueue {
+	dq := &DelayQueue{}
+	dq.locker = &sync.Mutex{}
+	dq.queue = make([]interface{}, 0, 100)
 	dq.timer = timer.NewTimer(interval)
 	dq.timer.Elapsed.Bind(dq.handleCallBack)
 	dq.callback = callback
@@ -26,10 +25,10 @@ func  NewDelayQueue(interval int64, callback func([]interface{}) error) *delayQu
 }
 
 // 推入延迟处理的数据
-func (obj *delayQueue) Push(items ...interface{})  {
+func (obj *DelayQueue) Push(items ...interface{}) {
 	defer func() {
 		obj.locker.Unlock()
-		if !obj.timer.IsRunning{
+		if !obj.timer.IsRunning {
 			obj.timer.Start()
 		}
 	}()
@@ -40,16 +39,19 @@ func (obj *delayQueue) Push(items ...interface{})  {
 	}
 }
 
-
 // 延迟处理回调
-func (obj *delayQueue) handleCallBack(arg *timer.EventArg) error{
+func (obj *DelayQueue) handleCallBack(arg *timer.EventArg) error {
 
-	if obj.callback!=nil{
+	//fmt.Println(arg)
+
+	if obj.callback != nil {
 
 		obj.timer.Stop()
 
 		len1 := len(obj.queue)
-		idx := utils.IntMax(len1, 100)
+		idx := utils.IfElseInt(len1 > 100, 100, len1)
+
+		//fmt.Println("回调：", len1, idx)
 
 		obj.locker.Lock()
 		//单次回调传入的数组
@@ -58,16 +60,27 @@ func (obj *delayQueue) handleCallBack(arg *timer.EventArg) error{
 		obj.queue = obj.queue[idx:]
 		obj.locker.Unlock()
 
+		//fmt.Println("回调：", result)
 
-		if err := obj.callback(result); err!=nil{
-			//执行出错了
-			fmt.Println("回调出错：", err)
-		}
+		go obj.execute(result)
 
-		if len(obj.queue)>0{
+		if len(obj.queue) > 0 {
 			obj.timer.Start()
 		}
 	}
 
 	return nil
+}
+
+// 执行回调函数
+func (obj *DelayQueue) execute(result []interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("出了错1：", "", err)
+		}
+	}()
+
+	if err := obj.callback(result); err != nil {
+		fmt.Println("出了错2：", err)
+	}
 }

@@ -27,3 +27,10 @@ func IntMax(x, y int) int {
 	}
 	return y
 }
+
+func IfElseInt(condition bool, valt int, valf int) int {
+	if condition {
+		return valt
+	}
+	return valf
+}
