@@ -62,7 +62,7 @@ func initNewObj(obj *Timer) {
 }
 
 // 执行单个回调函数
-func execute(obj *Timer, fun func( *EventArg) error, now *time.Time) {
+func execute(obj *Timer, fun func(*EventArg) error, now *time.Time) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("出了错1：", "", err)
@@ -75,8 +75,8 @@ func execute(obj *Timer, fun func( *EventArg) error, now *time.Time) {
 	}
 }
 
-func lisenTicker(obj *Timer) {
-	// fmt.Println(fmt.Sprintf("%s 准备监听", obj.Name))
+func (obj *Timer) lisenTicker() {
+	//fmt.Println(fmt.Sprintf("%s 准备监听", obj.Name))
 
 	defer func(obj *Timer) {
 		obj.wait.Done()
@@ -91,20 +91,23 @@ Loop:
 		select {
 		case now := <-obj.ticker.C:
 			//执行回调函数
+			//fmt.Println(fmt.Sprintf("%s 回调函数-START", obj.Name))
 			for _, f := range obj.Elapsed.events {
 				// 将最终的执行函数单独包装成方法
 				// 有利于其中一个或多个回调函数出错时，保证程序继续运行
-				execute(obj, f, &now)
+				go execute(obj, f, &now)
 			}
+			//fmt.Println(fmt.Sprintf("%s 回调函数-END", obj.Name))
 		case state, ok := <-obj.state:
+			//fmt.Println(fmt.Sprintf("%s 状态更改 %s", obj.Name, state))
 			if !ok {
+				obj.IsRunning = false
 				break Loop
 			}
 			if state == 1 {
 				//obj.mutex.Lock()
 				fmt.Println(fmt.Sprintf("%s will stop. %t %d", obj.Name, ok, state))
 				obj.IsRunning = false
-				close(obj.state)
 				obj.wait.Done()
 
 				//obj.mutex.Unlock()
@@ -140,7 +143,7 @@ func (obj *Timer) SetInterval(interval int64) {
 	}
 	obj.mutex.Unlock()
 	if obj.IsRunning {
-		go lisenTicker(obj)
+		go obj.lisenTicker()
 	}
 	//fmt.Printf("%p", obj.ticker)
 }
@@ -156,7 +159,7 @@ func (obj *Timer) Start() {
 	if obj.IsRunning {
 		return
 	}
-	fmt.Println(fmt.Sprintf("%s start %d", obj.Name, obj.interval))
+	fmt.Println(fmt.Sprintf("%s started %d", obj.Name, obj.interval))
 
 	obj.mutex.Lock()
 	obj.startTime = time.Now()
@@ -166,14 +169,14 @@ func (obj *Timer) Start() {
 
 	obj.mutex.Unlock()
 	//obj.wait.Add(1)
-	go lisenTicker(obj)
+	go obj.lisenTicker()
 	//obj.wait.Wait()
 }
 
 // 停止计时器
 func (obj *Timer) Stop() {
 
-	if obj.state == nil || obj.ticker == nil {
+	if obj.state == nil || obj.ticker == nil || !obj.IsRunning {
 		return
 	}
 
@@ -187,10 +190,6 @@ func (obj *Timer) Stop() {
 	}()
 
 	obj.mutex.Lock()
-	if !obj.IsRunning {
-		return
-	}
-
 	obj.stopTime = time.Now()
 	obj.wait.Add(1)
 
@@ -198,6 +197,7 @@ func (obj *Timer) Stop() {
 	obj.ticker.Stop()
 	obj.state <- 1
 	obj.wait.Wait() //这个的作用就是确保协程退出后执行下面的代码
+	close(obj.state)
 	fmt.Println(fmt.Sprintf("%s stopped spent %s", obj.Name, obj.stopTime.Sub(obj.startTime)))
 
 }
