@@ -25,6 +25,12 @@ func TestSlic(t *testing.T) {
 	ary4 := ary2[10:]
 	t.Logf("ary4 : %p", ary4)
 
+	var a string = "123"
+
+	b := a
+	fmt.Println("a addr = ", &a)
+	fmt.Println("b addr = ", &b)
+
 }
 
 func callback(datas []interface{}) error {
@@ -40,14 +46,30 @@ func TestDelayQueuePush(t *testing.T) {
 
 	q := NewDelayQueue(1550, callback)
 
+	c := make(chan int, 10)
+
 	go func(q *DelayQueue) {
 		for i := 0; i < 15000; i++ {
 			q.Push(i)
+			c <- i
 			if i%150 == 0 {
 				time.Sleep(time.Microsecond * 350)
 			}
 		}
 	}(q)
+
+	go func() {
+		//for i := range c {
+		//	fmt.Println(i)
+		//}
+		fmt.Println("length :", len(c))
+		for {
+			if len(c) == 0 {
+				time.Sleep(time.Microsecond * 100)
+			}
+			fmt.Println(<-c)
+		}
+	}()
 
 	time.Sleep(time.Second * 10)
 }
