@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-	"utils/logger"
 )
 
 func init() {}
@@ -42,11 +41,10 @@ type Timer struct {
 	stopTime  time.Time
 	wait      *sync.WaitGroup
 	ticker    *time.Ticker
-	logger    logger.Logger
 }
 
 // 创建新的实例化对象
-func NewTimer(interval int64, logger ...logger.Logger) *Timer {
+func NewTimer(interval int64) *Timer {
 	if interval <= 1 {
 		panic(errors.New("non-positive interval for NewTimer"))
 	}
@@ -54,9 +52,6 @@ func NewTimer(interval int64, logger ...logger.Logger) *Timer {
 	obj := &Timer{interval: interval, Name: name, IsRunning: false}
 	obj.mutex = &sync.Mutex{}
 	obj.wait = &sync.WaitGroup{}
-	if len(logger) > 0 {
-		obj.logger = logger[0]
-	}
 	return obj
 }
 
@@ -70,13 +65,13 @@ func initNewObj(obj *Timer) {
 func execute(obj *Timer, fun func(*EventArg) error, now *time.Time) {
 	defer func() {
 		if err := recover(); err != nil {
-			obj.logger.Error("出了错1：", "", err)
+			//obj.logger.Error("出了错1：", "", err)
 		}
 	}()
 
 	arg := &EventArg{Sender: obj, Msg: fmt.Sprintf("回调执行时间：%s ", now)}
 	if err := fun(arg); err != nil {
-		obj.logger.Error("出了错2：", err)
+		//obj.logger.Error("出了错2：", err)
 	}
 }
 
@@ -111,7 +106,7 @@ Loop:
 			}
 			if state == 1 {
 				//obj.mutex.Lock()
-				obj.logger.Info(fmt.Sprintf("%s will stop. %t %d", obj.Name, ok, state))
+				//obj.logger.Info(fmt.Sprintf("%s will stop. %t %d", obj.Name, ok, state))
 				obj.IsRunning = false
 				obj.wait.Done()
 
@@ -164,7 +159,7 @@ func (obj *Timer) Start() {
 	if obj.IsRunning {
 		return
 	}
-	obj.logger.Info(fmt.Sprintf("%s started %d", obj.Name, obj.interval))
+	//obj.logger.Info(fmt.Sprintf("%s started %d", obj.Name, obj.interval))
 
 	obj.mutex.Lock()
 	obj.startTime = time.Now()
@@ -198,11 +193,11 @@ func (obj *Timer) Stop() {
 	obj.stopTime = time.Now()
 	obj.wait.Add(1)
 
-	obj.logger.Info(fmt.Sprintf("%s go to stop timer .", obj.Name))
+	//obj.logger.Info(fmt.Sprintf("%s go to stop timer .", obj.Name))
 	obj.ticker.Stop()
 	obj.state <- 1
 	obj.wait.Wait() //这个的作用就是确保协程退出后执行下面的代码
 	close(obj.state)
-	obj.logger.Info(fmt.Sprintf("%s stopped spent %s", obj.Name, obj.stopTime.Sub(obj.startTime)))
+	//obj.logger.Info(fmt.Sprintf("%s stopped spent %s", obj.Name, obj.stopTime.Sub(obj.startTime)))
 
 }

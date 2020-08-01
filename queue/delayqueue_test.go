@@ -7,12 +7,18 @@ import (
 )
 
 func TestSlic(t *testing.T) {
+
+	var delay DelayQueue
+
+	t.Log("对象", delay)
+	t.Logf("%p", delay)
+
 	ary1 := make([]int, 0, 100)
 
 	t.Logf("%d", len(ary1))
 	t.Logf("%p", ary1)
 	ary2 := append(ary1, 0)
-	for i := 0; i < 150; i++ {
+	for i := 0; i < 10; i++ {
 		ary2 = append(ary2, i)
 		//ary2[i] = i
 		t.Logf("%p", ary2)
