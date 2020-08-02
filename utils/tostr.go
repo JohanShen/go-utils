@@ -13,21 +13,36 @@ func IsObjectNil(obj interface{}) bool {
 	if obj == nil {
 		return true
 	}
-	// TODO 需要检查一下空指针的是否需要判断
-	// 字符串类型判断
-	val := fmt.Sprintf("%v", obj)
-	if len(val) == 0 || val == "<nil>" {
-		return true
+	// 指针类型 判断指向的内存是否为空
+	vof := reflect.ValueOf(obj)
+	if vof.Kind() == reflect.Ptr {
+		//fmt.Printf("obj = %v, %v, %#v", vof.IsNil(), vof.IsZero(),reflect.ValueOf(obj).Elem())
+		//|| vof.Elem().Len()==0
+		if vof.IsNil() || vof.IsZero() {
+			return true
+		}
+	} else {
+		// 字符串类型判断
+		val := fmt.Sprintf("%v", obj)
+		if val == "<nil>" {
+			return true
+		}
 	}
 	return false
 }
 
+var spaceChar = []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}
+
 // 判断字符串是否为空或空字符串
 func IsStrEmptyOrNull(str string) bool {
-	if len(str) == 0 || strings.Trim(str, " ") == "" {
+	if len(str) == 0 {
 		return true
 	}
-	return false
+	for _, v := range spaceChar {
+		str = strings.Trim(str, string(v))
+		//fmt.Printf("V = %#v , %#v \n",string(v), v)
+	}
+	return len(str) == 0
 }
 
 // 任意类型转成字符串
@@ -35,10 +50,23 @@ func AnyToStr(obj interface{}) string {
 	if obj == nil {
 		return ""
 	}
-	val := fmt.Sprintf("%v", obj)
-	if len(val) == 0 || val == "<nil>" {
-		if val = reflect.TypeOf(obj).String(); len(val) == 0 {
-			val = reflect.TypeOf(obj).Kind().String()
+	val := ""
+	vof := reflect.ValueOf(obj)
+	if vof.Kind() == reflect.Ptr {
+		if vof.IsNil() || vof.IsZero() {
+			val = fmt.Sprint("")
+			//fmt.Printf("obj = %v, %v, %#v", vof.IsNil(), vof.IsZero(),reflect.ValueOf(obj).Elem())
+		} else {
+			val1 := vof.Elem()
+			val = fmt.Sprintf("%v", val1)
+		}
+	} else {
+		val = fmt.Sprintf("%v", obj)
+
+		if len(val) == 0 || val == "<nil>" {
+			if val = reflect.TypeOf(obj).String(); len(val) == 0 {
+				val = reflect.TypeOf(obj).Kind().String()
+			}
 		}
 	}
 	return val
