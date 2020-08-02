@@ -13,6 +13,7 @@ type (
 		//		分钟	%mi	自然位	%Mi 补齐2位
 		//		秒数	%s	自然位	%S 补齐2位
 		LogPath string
+		// TODO 针对不同级别日志文件路径的配置
 		// 日志是否输出到控制台
 		ConsoleLog bool
 		// 是否延迟写入

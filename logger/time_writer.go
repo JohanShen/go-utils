@@ -87,17 +87,17 @@ func (l *TimeWriter) closeFile() {
 		// 需要将之前的文件句柄关闭
 		for key, item := range l.files {
 			// 将非当前文件，且超过15分钟的文件句柄关闭
-			if key == l.CurrentPath || item.createTime.Sub(now) < time.Minute*-15 {
+			if key == l.CurrentPath || item.createTime.Sub(now) > time.Minute*-15 {
 				continue
 			}
 			closeFiles = append(closeFiles, key)
 			if err := item.file.Sync(); err != nil {
 				//有问题但是不处理
-				println("写入文件时 ", err)
+				println("写入文件时 closeFile() ", err)
 			}
 			if err := item.file.Close(); err != nil {
 				//有问题但是不处理
-				println("关闭文件时 ", err)
+				println("关闭文件时 closeFile() ", err)
 			}
 		}
 		if len(closeFiles) > 0 {
@@ -117,11 +117,11 @@ func (l *TimeWriter) Close() error {
 	for _, item := range l.files {
 		if err := item.file.Sync(); err != nil {
 			//有问题但是不处理
-			println("写入文件时 ", err)
+			println("写入文件时 Close() ", err)
 		}
 		if err := item.file.Close(); err != nil {
 			//有问题但是不处理
-			println("关闭文件时 ", err)
+			println("关闭文件时 Close() ", err)
 		}
 	}
 	return nil
