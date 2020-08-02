@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
@@ -11,6 +12,11 @@ import (
 	"utils/utils"
 )
 
+// zap 日志的具体实现
+//  可能存在的BUG：
+//   1 日志不是顺序输出的
+//   2 日志没有按生成时间输出到对应文件
+//
 type zapLogger struct {
 	config      *Config
 	logger      *zap.Logger
@@ -24,7 +30,7 @@ type zapLogger struct {
 
 var createdObject map[string]*zapLogger
 
-func NewZapLogger(config Config) *zapLogger {
+func NewZapLogger(config *Config) *zapLogger {
 
 	if len(config.Name) == 0 {
 		config.Name = "default"
@@ -35,17 +41,17 @@ func NewZapLogger(config Config) *zapLogger {
 	}
 
 	obj := &zapLogger{
-		config: &config,
+		config: config,
 	}
 
 	if config.WriteDelay > 0 {
 		//delay = queue.NewDelayQueue(config.WriteMode, obj.callback)
-		config.WriteDelay = utils.IfElseInt(config.WriteDelay > 100, config.WriteDelay, 100)
+		config.WriteDelay = utils.IfElseInt(config.WriteDelay > 10, config.WriteDelay, 10)
 		config.WriteDelay = utils.IfElseInt(config.WriteDelay > 10000, 10000, config.WriteDelay)
 
 		obj.locker = &sync.Mutex{}
-		obj.delayQueue = make([]*ZapBody, 0, 100)
-		obj.delayNum = 10
+		obj.delayQueue = make([]*ZapBody, 0, 10000)
+		obj.delayNum = 10000
 		obj.stopTicker = make(chan os.Signal, 1)
 		obj.ticker = time.NewTicker(time.Duration(config.WriteDelay) * time.Millisecond)
 		signal.Notify(obj.stopTicker, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -65,7 +71,8 @@ func NewZapLogger(config Config) *zapLogger {
 	}
 	core := zapcore.NewTee(cores...)
 
-	obj.logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.WarnLevel))
+	//zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.WarnLevel))
+	obj.logger = zap.New(core, zap.AddStacktrace(zap.WarnLevel))
 	obj.sugarLogger = obj.logger.Sugar()
 
 	return obj
@@ -84,9 +91,10 @@ func getEncoder() zapcore.Encoder {
 }
 
 func getLogWriter(path string) zapcore.WriteSyncer {
-	now := time.Now()
-	logPath := utils.XTime(now).Format(path)
-	file, _ := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	//now := time.Now()
+	//logPath := utils.XTime(now).Format(path)
+	//file, _ := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	file := NewTimeWriter(path)
 	return zapcore.AddSync(file)
 }
 
@@ -109,9 +117,11 @@ Loop:
 				result := z.delayQueue[:idx]
 				//从原数组中移除已经回调的数据
 				z.delayQueue = z.delayQueue[idx:]
+				//result1 := make([]ZapBody,1000)
+				//copy(result1, result)
 				z.locker.Unlock()
 
-				//fmt.Println("总长度：", len1, "取出数：", idx)
+				fmt.Println("总长度：", len1, "取出数：", idx)
 				// 将最终的执行函数单独包装成方法
 				// 有利于其中一个或多个回调函数出错时，保证程序继续运行
 				go z.writeMsg(result...)
@@ -140,17 +150,22 @@ func (z *zapLogger) writeMsg(bodies ...*ZapBody) {
 		if err := recover(); err != nil {
 			// 这个位置出错说明IO操作出现问题
 			// 无法写入到错误 为了程序稳定 也不宜 panic
-			println(err)
+			println("写入日志时出错 writeMsg() panic ", err)
 		}
 	}()
 
-	defer z.logger.Sync()
+	defer func() {
+		if err := z.logger.Sync(); err != nil {
+			println("写入日志时出错 writeMsg() Sync() ", err)
+		}
+	}()
 
 	for _, body := range bodies {
-		fields := make([]zap.Field, 0, 5)
+		fields := make([]zap.Field, 0, 3)
 		fields = append(fields, zap.String("name", z.config.Name))
 		fields = append(fields, zap.String("userid", body.UserId))
 		fields = append(fields, zap.Any("data", body.Data))
+
 		switch body.LogLevel {
 		case DebugLevel:
 			z.logger.Debug(body.Desc, fields...)
@@ -172,15 +187,13 @@ func (z *zapLogger) Write(level Level, args ...*Body) {
 
 	msgs := make([]*ZapBody, 0, len(args))
 	for _, item := range args {
-		nitem := item.ToZapBody(level)
+		nitem := ToZapBody(item, level)
 		msgs = append(msgs, nitem)
 	}
 
 	if z.config.WriteDelay == 0 {
 		//需要即时处理的数据
-		for _, item := range msgs {
-			z.writeMsg(item)
-		}
+		go z.writeMsg(msgs...)
 	} else {
 		//延迟处理的数据
 		z.locker.Lock()

@@ -18,8 +18,8 @@ type (
 	ZapInfoBody ZapBody
 )
 
-func ToZapBody(body *Body, level Level) ZapBody {
-	zBody := ZapBody{
+func ToZapBody(body *Body, level Level) *ZapBody {
+	zBody := &ZapBody{
 		LogLevel: level,
 	}
 	if val, ok := body.Data["userid"]; ok {
