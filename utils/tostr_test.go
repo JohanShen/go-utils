@@ -34,6 +34,9 @@ func TestAnyToStr2(t *testing.T) {
 	r1 := r.Convert(ttt)
 
 	t.Log(k, j, reflect.TypeOf(j), r1)
+
+	var a []string
+	t.Log(len(a))
 }
 
 func TestAnyToStr(t *testing.T) {

@@ -2,11 +2,12 @@ package logger
 
 import "fmt"
 
+// 日志级别
 type Level int8
 
 const (
-	// DebugLevel logs are typically voluminous, and are usually disabled in
-	// production.
+	// 调试级别
+	// 调试级别的日志体积会比较大，一般生成环境下禁用
 	DebugLevel Level = iota - 1
 	// InfoLevel is the default logging priority.
 	InfoLevel
@@ -28,7 +29,7 @@ const (
 	_maxLevel = FatalLevel
 )
 
-// String returns a lower-case ASCII representation of the log level.
+// 返回日志级别的小写字符串
 func (l Level) String() string {
 	switch l {
 	case DebugLevel:
