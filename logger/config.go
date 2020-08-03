@@ -20,5 +20,8 @@ type (
 		//	0 表示实时写入，不会做延迟处理
 		//	n(>0) 表示延迟 n 毫秒写入，可以降低 IO 写入次数
 		WriteDelay int
+		// 是否显示在顶层中
+		// 需要显示在顶层级别的字段名
+		ShowInTopLevel []string
 	}
 )

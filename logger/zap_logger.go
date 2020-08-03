@@ -161,9 +161,11 @@ func (z *zapLogger) writeMsg(bodies ...*ZapBody) {
 	}()
 
 	for _, body := range bodies {
-		fields := make([]zap.Field, 0, 3)
+		fields := make([]zap.Field, 0, len(body.TopLevelData)+2)
 		fields = append(fields, zap.String("name", z.config.Name))
-		fields = append(fields, zap.String("userid", body.UserId))
+		for key, val := range body.TopLevelData {
+			fields = append(fields, zap.Any(key, val))
+		}
 		fields = append(fields, zap.Any("data", body.Data))
 
 		switch body.LogLevel {
@@ -183,42 +185,50 @@ func (z *zapLogger) writeMsg(bodies ...*ZapBody) {
 	}
 }
 
-func (z *zapLogger) Write(level Level, args ...*Body) {
+func (z *zapLogger) write(level Level, desc string, args ...*LogArg) {
 
-	msgs := make([]*ZapBody, 0, len(args))
+	body := &ZapBody{
+		LogLevel:     level,
+		Desc:         desc,
+		Data:         make(map[string]interface{}),
+		TopLevelData: make(map[string]interface{}),
+	}
 	for _, item := range args {
-		nitem := ToZapBody(item, level)
-		msgs = append(msgs, nitem)
+		if len(z.config.ShowInTopLevel) > 0 && utils.IndexOfWithoutCase(z.config.ShowInTopLevel, item.Key) > -1 {
+			body.TopLevelData[item.Key] = item.Value
+		} else {
+			body.Data[item.Key] = item.Value
+		}
 	}
 
 	if z.config.WriteDelay == 0 {
 		//需要即时处理的数据
-		go z.writeMsg(msgs...)
+		go z.writeMsg(body)
 	} else {
 		//延迟处理的数据
+		//此处可能会存在性能问题
 		z.locker.Lock()
-		for _, item := range msgs {
-			z.delayQueue = append(z.delayQueue, item)
-		}
+		z.delayQueue = append(z.delayQueue, body)
 		z.locker.Unlock()
 	}
+
 }
 
-func (z *zapLogger) Debug(args ...*Body) {
-	z.Write(DebugLevel, args...)
+func (z *zapLogger) Debug(desc string, args ...*LogArg) {
+	z.write(DebugLevel, desc, args...)
 }
-func (z *zapLogger) Error(args ...*Body) {
-	z.Write(ErrorLevel, args...)
+func (z *zapLogger) Error(desc string, args ...*LogArg) {
+	z.write(ErrorLevel, desc, args...)
 }
-func (z *zapLogger) Fatal(args ...*Body) {
-	z.Write(FatalLevel, args...)
+func (z *zapLogger) Fatal(desc string, args ...*LogArg) {
+	z.write(FatalLevel, desc, args...)
 }
-func (z *zapLogger) Info(args ...*Body) {
-	z.Write(InfoLevel, args...)
+func (z *zapLogger) Info(desc string, args ...*LogArg) {
+	z.write(InfoLevel, desc, args...)
 }
-func (z *zapLogger) Panic(args ...*Body) {
-	z.Write(PanicLevel, args...)
+func (z *zapLogger) Panic(desc string, args ...*LogArg) {
+	z.write(PanicLevel, desc, args...)
 }
-func (z *zapLogger) Warn(args ...*Body) {
-	z.Write(WarnLevel, args...)
+func (z *zapLogger) Warn(desc string, args ...*LogArg) {
+	z.write(WarnLevel, desc, args...)
 }

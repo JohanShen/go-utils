@@ -91,17 +91,19 @@ func TestDebug(t *testing.T) {
 	fileInfo, err = os.Stat("test.log")
 	t.Log(fileInfo, err)
 
-	var config = &Config{Name: "test", ConsoleLog: false, LogPath: "./%Y/%M%D/%H%I.log", WriteDelay: 50}
+	var config = &Config{Name: "test", ConsoleLog: false, LogPath: "./%Y/%M%D/%H%I.log", WriteDelay: 50, ShowInTopLevel: []string{"token", "userid"}}
 	var logger1 Logger
 	logger1 = NewZapLogger(config)
 
 	go func(logger1 Logger) {
 		for i := 0; i < 20000000; i++ {
-			data := make(map[string]interface{})
-			data["time"] = currentTime
-			data["userid"] = i + i*2
-			data["i"] = i
-			logger1.Debug(MakeBody(fmt.Sprintf("男儿当自强 %d", i), data))
+			data := make([]*LogArg, 0, 5)
+			data = append(data, ArgToken(utils.AnyToStr(time.Now().Unix())))
+			data = append(data, ArgUserId(utils.AnyToStr(i+i*2)))
+			data = append(data, ArgAny("time", time.Now()))
+			data = append(data, ArgAny("i", i))
+
+			logger1.Debug(fmt.Sprintf("男儿当自强 %d", i), data...)
 			//time.Sleep(15 * time.Millisecond)
 		}
 	}(logger1)
