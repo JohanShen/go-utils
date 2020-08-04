@@ -12,8 +12,4 @@ type (
 		Panic(desc string, args ...*LogArg)
 		Warn(desc string, args ...*LogArg)
 	}
-	// 设置日志类接口
-	SetLogger interface {
-		SetLogger(logger *Logger)
-	}
 )

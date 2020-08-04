@@ -166,7 +166,9 @@ func (z *zapLogger) writeMsg(bodies ...*ZapBody) {
 		for key, val := range body.TopLevelData {
 			fields = append(fields, zap.Any(key, val))
 		}
-		fields = append(fields, zap.Any("data", body.Data))
+		if body.Data != nil {
+			fields = append(fields, zap.Any("data", body.Data))
+		}
 
 		switch body.LogLevel {
 		case DebugLevel:
@@ -190,15 +192,18 @@ func (z *zapLogger) write(level Level, desc string, args ...*LogArg) {
 	body := &ZapBody{
 		LogLevel:     level,
 		Desc:         desc,
-		Data:         make(map[string]interface{}),
 		TopLevelData: make(map[string]interface{}),
 	}
 	for _, item := range args {
 		if len(z.config.ShowInTopLevel) > 0 && utils.IndexOfWithoutCase(z.config.ShowInTopLevel, item.Key) > -1 {
 			body.TopLevelData[item.Key] = item.Value
 		} else {
+			if body.Data == nil {
+				body.Data = make(map[string]interface{})
+			}
 			body.Data[item.Key] = item.Value
 		}
+
 	}
 
 	if z.config.WriteDelay == 0 {
