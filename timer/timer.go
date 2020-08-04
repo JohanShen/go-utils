@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"reflect"
+	"runtime"
 	"sync"
 	"time"
+	"utils/logger"
 )
 
 func init() {}
@@ -34,7 +37,8 @@ type Timer struct {
 	Name      string //名称
 	IsRunning bool   //运行状态
 
-	mutex     *sync.Mutex //互斥锁
+	logger    logger.Logger // 日志记录器
+	mutex     *sync.Mutex   //互斥锁
 	interval  int64
 	state     chan int
 	startTime time.Time
@@ -61,26 +65,37 @@ func initNewObj(obj *Timer) {
 	obj.state = make(chan int, 1)
 }
 
+//设置日志
+func (obj *Timer) UseLogger(logger logger.Logger) *Timer {
+	obj.logger = logger
+	return obj
+}
+
 // 执行单个回调函数
 func execute(obj *Timer, fun func(*EventArg) error, now *time.Time) {
+
+	funcName := runtime.FuncForPC(reflect.ValueOf(fun).Pointer()).Name()
+
 	defer func() {
 		if err := recover(); err != nil {
-			//obj.logger.Error("出了错1：", "", err)
+			logger.Panic(obj.logger, fmt.Sprintf("%s 回调错误 panic ", obj.Name), err)
 		}
 	}()
 
+	logger.Debug(obj.logger, fmt.Sprintf("%s 回调 %s", obj.Name, funcName))
 	arg := &EventArg{Sender: obj, Msg: fmt.Sprintf("回调执行时间：%s ", now)}
 	if err := fun(arg); err != nil {
-		//obj.logger.Error("出了错2：", err)
+		logger.Error(obj.logger, fmt.Sprintf("%s 回调错误 error", obj.Name), logger.ArgAny("err", err))
 	}
 }
 
 func (obj *Timer) lisenTicker() {
-	//fmt.Println(fmt.Sprintf("%s 准备监听", obj.Name))
+
+	logger.Debug(obj.logger, fmt.Sprintf("%s 准备监听", obj.Name))
 
 	defer func(obj *Timer) {
 		obj.wait.Done()
-		//fmt.Print(fmt.Sprintf("========[][][][] %s next ", obj.Name))
+		logger.Debug(obj.logger, fmt.Sprintf("%s 退出监听函数 ", obj.Name))
 	}(obj)
 
 	obj.wait.Add(1)
@@ -91,23 +106,22 @@ Loop:
 		select {
 		case now := <-obj.ticker.C:
 			//执行回调函数
-			//fmt.Println(fmt.Sprintf("%s 回调函数-START", obj.Name))
+			logger.Debug(obj.logger, fmt.Sprintf("%s 回调函数-START[%d]", obj.Name, runtime.NumGoroutine()))
 			for _, f := range obj.Elapsed.events {
 				// 将最终的执行函数单独包装成方法
 				// 有利于其中一个或多个回调函数出错时，保证程序继续运行
 				go execute(obj, f, &now)
 			}
-			//fmt.Println(fmt.Sprintf("%s 回调函数-END", obj.Name))
+			logger.Debug(obj.logger, fmt.Sprintf("%s 回调函数-END", obj.Name))
 		case state, ok := <-obj.state:
-			//fmt.Println(fmt.Sprintf("%s 状态更改 %s", obj.Name, state))
+			logger.Debug(obj.logger, fmt.Sprintf("%s 状态更改 state(value = %v, isclose = %v)", obj.Name, state, ok))
 			if !ok {
-				obj.IsRunning = false
+				logger.Debug(obj.logger, fmt.Sprintf("%s 通道已被关闭", obj.Name))
 				break Loop
 			}
 			if state == 1 {
 				//obj.mutex.Lock()
-				//obj.logger.Info(fmt.Sprintf("%s will stop. %t %d", obj.Name, ok, state))
-				obj.IsRunning = false
+				logger.Debug(obj.logger, fmt.Sprintf("%s 收到关闭通知", obj.Name))
 				obj.wait.Done()
 
 				//obj.mutex.Unlock()
@@ -116,36 +130,48 @@ Loop:
 
 		}
 
-		//fmt.Print(fmt.Sprintf("%s next ", obj.Name))
+		logger.Debug(obj.logger, fmt.Sprintf("%s 准备接受下一轮信号", obj.Name))
 	}
 
-	//fmt.Println(fmt.Sprintf("%s 退出监听", obj.Name))
+	logger.Debug(obj.logger, fmt.Sprintf("%s 完成监听", obj.Name))
 }
 
 // 设置定时器的名称
 func (obj *Timer) SetName(name string) *Timer {
+
+	logger.Debug(obj.logger, fmt.Sprintf("%s 更改名称 %[1]s => %s", obj.Name, name))
 	obj.Name = name
 	return obj
 }
 
 //设置执行间隔
-func (obj *Timer) SetInterval(interval int64) {
+func (obj *Timer) SetInterval(interval int64) error {
+
+	if interval <= 1 {
+		return errors.New("non-positive interval for NewTimer")
+	}
 
 	obj.mutex.Lock()
 	obj.interval = interval
+	logger.Debug(obj.logger, fmt.Sprintf("%s 更改间隔 %[1]s -> %d", obj.Name, interval))
 	if obj.ticker != nil {
 		//fmt.Println()
 		//fmt.Print("set interval")
 		obj.ticker.Stop()
-		//obj.state <- 2
+		obj.wait.Add(1)
+		obj.state <- 1
+		obj.wait.Wait()
 		obj.ticker = time.NewTicker(time.Duration(obj.interval) * time.Millisecond)
+		//obj.state = make(chan int, 1)
 		//fmt.Print(" ok")
 	}
+	logger.Debug(obj.logger, fmt.Sprintf("%s 更改间隔成功 %[1]s -> %d", obj.Name, interval))
 	obj.mutex.Unlock()
 	if obj.IsRunning {
 		go obj.lisenTicker()
 	}
 	//fmt.Printf("%p", obj.ticker)
+	return nil
 }
 
 // 开始计时器
@@ -159,7 +185,8 @@ func (obj *Timer) Start() {
 	if obj.IsRunning {
 		return
 	}
-	//obj.logger.Info(fmt.Sprintf("%s started %d", obj.Name, obj.interval))
+
+	logger.Debug(obj.logger, fmt.Sprintf("%s 执行间隔 %d", obj.Name, obj.interval))
 
 	obj.mutex.Lock()
 	obj.startTime = time.Now()
@@ -184,8 +211,10 @@ func (obj *Timer) Stop() {
 		obj.mutex.Unlock()
 		if err := recover(); err != nil {
 			//
+			logger.Panic(obj.logger, fmt.Sprintf("%s 停止时出错", obj.Name), err)
 		} else {
 			//
+			logger.Debug(obj.logger, fmt.Sprintf("%s 停止成功", obj.Name))
 		}
 	}()
 
@@ -193,11 +222,12 @@ func (obj *Timer) Stop() {
 	obj.stopTime = time.Now()
 	obj.wait.Add(1)
 
-	//obj.logger.Info(fmt.Sprintf("%s go to stop timer .", obj.Name))
+	logger.Debug(obj.logger, fmt.Sprintf("%s 停止-START", obj.Name))
 	obj.ticker.Stop()
 	obj.state <- 1
 	obj.wait.Wait() //这个的作用就是确保协程退出后执行下面的代码
+	obj.IsRunning = false
 	close(obj.state)
-	//obj.logger.Info(fmt.Sprintf("%s stopped spent %s", obj.Name, obj.stopTime.Sub(obj.startTime)))
+	logger.Debug(obj.logger, fmt.Sprintf("%s 停止-STOPPED", obj.Name))
 
 }
