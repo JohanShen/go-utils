@@ -29,12 +29,11 @@ func ZipBytes(data []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	defer ioClose(z)
 	_, err = z.Write(data)
 	if err != nil {
 		return []byte{}, err
 	}
-
+	ioClose(z)
 	return in.Bytes(), nil
 }
 
@@ -47,11 +46,12 @@ func UZipBytes(data []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	defer ioClose(r)
+
 	_, err = io.Copy(&out, r)
 	if err != nil {
 		return []byte{}, err
 	}
+	ioClose(r)
 	return out.Bytes(), nil
 }
 
@@ -63,11 +63,11 @@ func GZipBytes(data []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	defer ioClose(g)
 	_, err = g.Write(data)
 	if err != nil {
 		return []byte{}, err
 	}
+	ioClose(g)
 	return input.Bytes(), nil
 }
 
@@ -80,10 +80,10 @@ func UGZipBytes(data []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	defer ioClose(r)
 	_, err = io.Copy(&out, r)
 	if err != nil {
 		return []byte{}, err
 	}
+	ioClose(r)
 	return out.Bytes(), nil
 }
