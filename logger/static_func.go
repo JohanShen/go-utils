@@ -21,8 +21,8 @@ func ErrorWithArg(logger Logger, desc string, err interface{}, args ...*LogArg) 
 	if logger != nil {
 		if args == nil {
 			args = make([]*LogArg, 1)
-			args = append(args, ArgAny("err", err))
 		}
+		args = append(args, ArgAny("err", err))
 		logger.Error(desc, args...)
 	}
 }
@@ -41,8 +41,8 @@ func FatalWithArg(logger Logger, desc string, err interface{}, args ...*LogArg) 
 	if logger != nil {
 		if args == nil {
 			args = make([]*LogArg, 1)
-			args = append(args, ArgAny("err", err))
 		}
+		args = append(args, ArgAny("err", err))
 		logger.Fatal(desc, args...)
 	}
 }
@@ -61,8 +61,8 @@ func PanicWithArg(logger Logger, desc string, err interface{}, args ...*LogArg) 
 	if logger != nil {
 		if args == nil {
 			args = make([]*LogArg, 1)
-			args = append(args, ArgAny("err", err))
 		}
+		args = append(args, ArgAny("err", err))
 		logger.Panic(desc, args...)
 	}
 }
@@ -82,8 +82,8 @@ func WarnWithArg(logger Logger, desc string, err interface{}, args ...*LogArg) {
 	if logger != nil {
 		if args == nil {
 			args = make([]*LogArg, 1)
-			args = append(args, ArgAny("err", err))
 		}
+		args = append(args, ArgAny("err", err))
 		logger.Warn(desc, args...)
 	}
 }

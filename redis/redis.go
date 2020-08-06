@@ -14,26 +14,40 @@
 
 package redis
 
-import "github.com/go-redis/redis/v7"
+import (
+	"errors"
+	"github.com/go-redis/redis/v7"
+)
 
 //Redis client (cmdable and config)
 type Redis struct {
-	Config *Config
-	Client redis.Cmdable
+	redis.Cmdable
+	Config     *Config
+	ValueCoder ValueCoder
 }
 
-// Cluster try to get a redis.ClusterClient
-func (r *Redis) Cluster() *redis.ClusterClient {
-	if c, ok := r.Client.(*redis.ClusterClient); ok {
-		return c
+func (self *Redis) UseValueCoder(coder ValueCoder) *Redis {
+	_redis := &Redis{
+		Config:     self.Config,
+		Cmdable:    self.Cmdable,
+		ValueCoder: coder,
 	}
-	return nil
+	return _redis
 }
 
-//Stub try to get a redis.Client
-func (r *Redis) Stub() *redis.Client {
-	if c, ok := r.Client.(*redis.Client); ok {
-		return c
+func ValueEncode(coder ValueCoder, v interface{}) interface{} {
+	if coder == nil {
+		return v
 	}
-	return nil
+	if bytes, err := coder.Encoder(v); err == nil {
+		return bytes
+	}
+	return v
+}
+
+func ValueDecode(coder ValueCoder, o []byte, v interface{}) error {
+	if coder == nil {
+		return errors.New("ValueDecoder can't make nil values")
+	}
+	return coder.DeCoder(o, v)
 }
