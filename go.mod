@@ -1,4 +1,4 @@
-module github.com/JohanShen/go-utils/v1
+module github.com/JohanShen/go-utils
 
 go 1.14
 

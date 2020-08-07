@@ -3,7 +3,7 @@ package timer
 import (
 	"errors"
 	"fmt"
-	"github.com/JohanShen/go-utils/v1/logger"
+	"github.com/JohanShen/go-utils/logger"
 	"math/rand"
 	"reflect"
 	"runtime"

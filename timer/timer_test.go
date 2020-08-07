@@ -2,7 +2,7 @@ package timer
 
 import (
 	"fmt"
-	"github.com/JohanShen/go-utils/v1/logger"
+	"github.com/JohanShen/go-utils/logger"
 	"runtime"
 	"testing"
 	"time"

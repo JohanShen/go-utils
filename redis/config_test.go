@@ -3,8 +3,8 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JohanShen/go-utils/v1/logger"
-	"github.com/JohanShen/go-utils/v1/utils"
+	"github.com/JohanShen/go-utils/logger"
+	"github.com/JohanShen/go-utils/utils"
 	"github.com/vmihailenco/msgpack/v5"
 	"math/rand"
 	"testing"

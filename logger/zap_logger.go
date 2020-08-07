@@ -2,7 +2,7 @@ package logger
 
 import (
 	"fmt"
-	"github.com/JohanShen/go-utils/v1/utils"
+	"github.com/JohanShen/go-utils/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"

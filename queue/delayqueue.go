@@ -2,8 +2,8 @@ package queue
 
 import (
 	"fmt"
-	"github.com/JohanShen/go-utils/v1/timer"
-	"github.com/JohanShen/go-utils/v1/utils"
+	"github.com/JohanShen/go-utils/timer"
+	"github.com/JohanShen/go-utils/utils"
 	"sync"
 )
 
