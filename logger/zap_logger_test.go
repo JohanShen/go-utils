@@ -2,13 +2,13 @@ package logger
 
 import (
 	"fmt"
+	"github.com/JohanShen/go-utils/v1/utils"
 	"os"
 	"os/signal"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
-	"utils/utils"
 )
 
 func TestABC(t *testing.T) {

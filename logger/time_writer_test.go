@@ -2,9 +2,9 @@ package logger
 
 import (
 	"fmt"
+	"github.com/JohanShen/go-utils/v1/utils"
 	"testing"
 	"time"
-	"utils/utils"
 )
 
 func TestNewTimeWriter(t *testing.T) {

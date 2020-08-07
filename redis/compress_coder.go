@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"utils/utils"
+	"github.com/JohanShen/go-utils/v1/utils"
 )
 
 type CompressCoder struct {

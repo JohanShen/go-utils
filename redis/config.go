@@ -1,9 +1,9 @@
 package redis
 
 import (
+	"github.com/JohanShen/go-utils/v1/logger"
 	"github.com/go-redis/redis/v7"
 	"time"
-	"utils/logger"
 )
 
 const (

@@ -2,9 +2,9 @@ package queue
 
 import (
 	"fmt"
+	"github.com/JohanShen/go-utils/v1/timer"
+	"github.com/JohanShen/go-utils/v1/utils"
 	"sync"
-	"utils/timer"
-	"utils/utils"
 )
 
 type DelayQueue struct {

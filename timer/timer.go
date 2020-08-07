@@ -3,12 +3,12 @@ package timer
 import (
 	"errors"
 	"fmt"
+	"github.com/JohanShen/go-utils/v1/logger"
 	"math/rand"
 	"reflect"
 	"runtime"
 	"sync"
 	"time"
-	"utils/logger"
 )
 
 func init() {}

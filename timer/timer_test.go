@@ -2,10 +2,10 @@ package timer
 
 import (
 	"fmt"
+	"github.com/JohanShen/go-utils/v1/logger"
 	"runtime"
 	"testing"
 	"time"
-	"utils/logger"
 )
 
 func TestNewTimer(t *testing.T) {

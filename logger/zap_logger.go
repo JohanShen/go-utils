@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/JohanShen/go-utils/v1/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
@@ -9,7 +10,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"utils/utils"
 )
 
 // zap 日志的具体实现

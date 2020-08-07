@@ -2,11 +2,11 @@ package logger
 
 import (
 	"fmt"
+	"github.com/JohanShen/go-utils/v1/utils"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
-	"utils/utils"
 )
 
 type TimeWriter struct {

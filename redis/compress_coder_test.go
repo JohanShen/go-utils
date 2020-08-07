@@ -1,8 +1,8 @@
 package redis
 
 import (
+	"github.com/JohanShen/go-utils/v1/logger"
 	"testing"
-	"utils/logger"
 )
 
 func TestCompressCoder_Encoder(t *testing.T) {
