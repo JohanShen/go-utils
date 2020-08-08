@@ -1,4 +1,4 @@
-package redis
+package kredis
 
 import (
 	"github.com/JohanShen/go-utils/utils"

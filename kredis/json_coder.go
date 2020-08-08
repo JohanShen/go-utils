@@ -1,4 +1,4 @@
-package redis
+package kredis
 
 import "encoding/json"
 

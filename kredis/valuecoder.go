@@ -1,4 +1,4 @@
-package redis
+package kredis
 
 type ValueCoder interface {
 	// 将对象转成字节组

@@ -1,4 +1,4 @@
-package redis
+package kredis
 
 import (
 	"github.com/JohanShen/go-utils/logger"
@@ -13,7 +13,7 @@ const (
 	StubMode string = "stub"
 )
 
-// Config for redis, contains RedisStubConfig and RedisClusterConfig
+// Config for kredis, contains RedisStubConfig and RedisClusterConfig
 type Config struct {
 	// Addrs 实例配置地址
 	Addrs []string `json:"addrs" toml:"addrs"`
@@ -67,7 +67,7 @@ func DefaultRedisConfig() *Config {
 func (config *Config) Build() *Redis {
 	count := len(config.Addrs)
 	if count < 1 {
-		logger.Panic(config.logger, "no address in redis config", logger.ArgAny("config", *config))
+		logger.Panic(config.logger, "no address in kredis config", logger.ArgAny("config", *config))
 	}
 	if len(config.Mode) == 0 {
 		config.Mode = StubMode
@@ -79,16 +79,16 @@ func (config *Config) Build() *Redis {
 	switch config.Mode {
 	case ClusterMode:
 		if count == 1 {
-			logger.Debug(config.logger, "redis config has only 1 address but with cluster mode")
+			logger.Debug(config.logger, "kredis config has only 1 address but with cluster mode")
 		}
 		client = config.buildCluster()
 	case StubMode:
 		if count > 1 {
-			logger.Debug(config.logger, "redis config has more than 1 address but with stub mode")
+			logger.Debug(config.logger, "kredis config has more than 1 address but with stub mode")
 		}
 		client = config.buildStub()
 	default:
-		logger.Debug(config.logger, "redis mode must be one of (stub, cluster)")
+		logger.Debug(config.logger, "kredis mode must be one of (stub, cluster)")
 	}
 
 	return &Redis{
@@ -115,7 +115,7 @@ func (config *Config) buildStub() *redis.Client {
 	//fmt.Printf("%+v", options)
 
 	if err := stubClient.Ping().Err(); err != nil {
-		logger.ErrorWithArg(config.logger, "dial redis fail", err, logger.ArgAny("config", *config))
+		logger.ErrorWithArg(config.logger, "dial kredis fail", err, logger.ArgAny("config", *config))
 	}
 
 	return stubClient
@@ -137,7 +137,7 @@ func (config *Config) buildCluster() *redis.ClusterClient {
 		IdleTimeout:  config.IdleTimeout,
 	})
 	if err := clusterClient.Ping().Err(); err != nil {
-		logger.ErrorWithArg(config.logger, "dial redis fail", err, logger.ArgAny("config", *config))
+		logger.ErrorWithArg(config.logger, "dial kredis fail", err, logger.ArgAny("config", *config))
 	}
 	return clusterClient
 }
