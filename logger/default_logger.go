@@ -17,7 +17,11 @@ func printOnConsole(level Level, desc string, args ...*LogArg) {
 	for _, v := range args {
 		data[v.Key] = v.Value
 	}
-	fmt.Println(level.String(), desc, data)
+	if len(data) == 0 {
+		fmt.Println(level.String(), desc)
+	} else {
+		fmt.Println(level.String(), desc, data)
+	}
 }
 
 func (myself *defaultLogger) Debug(desc string, args ...*LogArg) {
