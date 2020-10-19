@@ -18,9 +18,25 @@ func Md5(s string) (result string) {
 	return
 }
 
+func Md5Bytes(p []byte) (result string) {
+	m := md5.New()
+	m.Write(p)
+	b := m.Sum(nil)
+	result = hex.EncodeToString(b)
+	return
+}
+
 func Sha1(s string) (result string) {
 	sha := sha1.New()
 	sha.Write([]byte(s))
+	b := sha.Sum(nil)
+	result = fmt.Sprintf("%x", b)
+	return
+}
+
+func Sha1Bytes(p []byte) (result string) {
+	sha := sha1.New()
+	sha.Write(p)
 	b := sha.Sum(nil)
 	result = fmt.Sprintf("%x", b)
 	return
@@ -34,9 +50,25 @@ func Sha256(s string) (result string) {
 	return
 }
 
+func Sha256Bytes(p []byte) (result string) {
+	sha := sha256.New()
+	sha.Write(p)
+	b := sha.Sum(nil)
+	result = fmt.Sprintf("%x", b)
+	return
+}
+
 func Sha512(s string) (result string) {
 	sha := sha512.New()
 	sha.Write([]byte(s))
+	b := sha.Sum(nil)
+	result = fmt.Sprintf("%x", b)
+	return
+}
+
+func Sha512Bytes(p []byte) (result string) {
+	sha := sha512.New()
+	sha.Write(p)
 	b := sha.Sum(nil)
 	result = fmt.Sprintf("%x", b)
 	return
