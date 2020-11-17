@@ -97,23 +97,23 @@ func AnyToStr(obj interface{}) string {
 //	case string:
 //		b = a.(string)
 //	default:
-//		val := reflect.ValueOf(a)
+//		str := reflect.ValueOf(a)
 //		switch strings.ToLower(reflect.TypeOf(a).Kind().String()) {
 //		case "int","int8","int16","int32","int64":
 //
 //			vtype := reflect.TypeOf(int64(0))
-//			r1 := val.Convert(vtype).Int()
+//			r1 := str.Convert(vtype).Int()
 //			b = strconv.FormatInt(r1, 10)
 //
 //		case "uint","uint8","uint16","uint32","uint64":
 //
 //			vtype := reflect.TypeOf(uint64(0))
-//			r1 := val.Convert(vtype).Uint()
+//			r1 := str.Convert(vtype).Uint()
 //			b = strconv.FormatUint(r1, 10)
 //		case "string":
 //
 //			vtype := reflect.TypeOf(string(0))
-//			r1 := val.Convert(vtype).String()
+//			r1 := str.Convert(vtype).String()
 //			b = r1
 //
 //		default:
